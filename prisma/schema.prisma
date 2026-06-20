@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id         String   @id @default(uuid())
+  username   String   @unique
+  email      String   @unique
+  password   String
+  createdAt  DateTime @default(now())
+  
+  messages      Message[]       @relation("UserMessages")
+  participants  Participant[]   @relation("UserParticipants")
+  
+  @@map("users")
+}
+
+model Conversation {
+  id           String         @id @default(uuid())
+  createdAt    DateTime       @default(now())
+  
+  participants Participant[]  @relation("ConversationParticipants")
+  messages     Message[]      @relation("ConversationMessages")
+  
+  @@map("conversations")
+}
+
+model Participant {
+  id             String        @id @default(uuid())
+  userId         String
+  conversationId String
+  joinedAt       DateTime      @default(now())
+  
+  user         User         @relation("UserParticipants", fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation("ConversationParticipants", fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, conversationId])
+  @@map("participants")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  senderId       String
+  conversationId String
+  content        String       @db.Text
+  createdAt      DateTime     @default(now())
+  seen           Boolean      @default(false)
+  
+  sender       User         @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation("ConversationMessages", fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
